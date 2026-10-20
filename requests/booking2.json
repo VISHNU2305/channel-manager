@@ -1,0 +1,9 @@
+{
+  "source": "ota-b",
+  "external_reference": "B-2001",
+  "room_type_id": 2,
+  "guest_name": "Greedy Guest",
+  "check_in": "2026-10-25",
+  "check_out": "2026-10-27",
+  "rooms": 6
+}
