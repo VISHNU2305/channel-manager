@@ -31,7 +31,7 @@ h1{font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:-.02em}
 .stat small{color:var(--mute);font-size:13px}
 h2{font-size:18px;font-weight:600;margin-bottom:4px}
 .sub{color:var(--mute);font-size:13px;margin-bottom:18px}
-.stage{perspective:1500px;overflow-x:auto;padding:30px 4px 6px}
+.stage{perspective:1500px;overflow-x:auto;padding:30px 28px 6px}
 .board{min-width:760px;transform-style:preserve-3d;transform:rotateX(calc(14deg + var(--rx,0deg))) rotateY(var(--ry,0deg));transition:transform .2s ease-out}
 .row{display:grid;grid-template-columns:150px 1fr;align-items:end;margin-bottom:18px}
 .rl{font-size:13px;line-height:1.3;padding-bottom:8px}.rl b{display:block;font-family:'Sora';font-size:14px}.rl span{color:var(--mute)}
