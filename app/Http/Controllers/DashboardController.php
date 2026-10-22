@@ -8,6 +8,7 @@ use App\Models\Inventory;
 use App\Models\RoomType;
 use App\Services\BookingService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -57,5 +58,19 @@ class DashboardController extends Controller
         }
 
         return back()->with('success', "Booking #{$booking->id} confirmed and inventory updated.");
+    }
+
+    public function reset()
+    {
+        DB::transaction(function () {
+            Booking::query()->delete();
+
+            foreach (RoomType::all() as $roomType) {
+                Inventory::where('room_type_id', $roomType->id)
+                    ->update(['available_count' => $roomType->total_rooms]);
+            }
+        });
+
+        return back()->with('success', 'Demo reset: all bookings cleared and inventory restored.');
     }
 }

@@ -6,3 +6,4 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', fn () => redirect()->route('dashboard'));
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 Route::post('/dashboard/bookings', [DashboardController::class, 'book'])->name('dashboard.book');
+Route::post('/dashboard/reset', [DashboardController::class, 'reset'])->name('dashboard.reset');

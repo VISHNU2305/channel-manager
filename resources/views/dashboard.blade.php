@@ -75,7 +75,11 @@ td{padding:9px 8px;border-top:1px solid var(--line)}tbody tr{transition:backgrou
     <h1>Mini Channel Manager</h1>
     <p class="jp">手間いらず: update once, every booking site stays in sync</p>
   </div>
-  <div class="live"><i></i>Inventory locked per night</div>
+  <div class="live"><i></i>Inventory locked per night
+    <form method="POST" action="{{ route('dashboard.reset') }}" style="margin-left:14px">@csrf
+      <button style="width:auto;margin:0;padding:6px 14px;font-size:12px;background:rgba(255,255,255,.1)">Reset demo</button>
+    </form>
+  </div>
 </header>
 
 @if (session('success'))<div class="flash good">{{ session('success') }}</div>@endif
