@@ -95,7 +95,8 @@ Browser -> Apache + PHP (EC2, Ubuntu) -> MySQL (RDS)
 ```
 
 - **EC2:** Laravel served by Apache, updated with `git pull` from GitHub
-- **RDS:** managed MySQL, reached from the app server through a security group rule
+- - **RDS:** managed MySQL, not publicly accessible. Only the app server can reach it,
+  through a security group rule
 - **Queue worker:** runs as a systemd service and restarts automatically
 - **Security groups:** SSH limited to my IP, HTTP open, MySQL (3306) allowed from the
   app server
