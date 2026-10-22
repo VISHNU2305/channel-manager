@@ -47,3 +47,21 @@ PHP 8.3, Laravel, MySQL, Tailwind-free custom CSS, vanilla JavaScript
 - Sync engine: push availability to other booking sites through queued jobs with retries
 - Adapters for different booking-site formats (JSON, XML, rate-limited API)
 - Sync status page and audit log
+
+## Live demo
+
+http://16.178.62.251/dashboard
+
+Use the **Reset demo** button to restore the data after trying bookings.
+
+## Deployment on AWS
+
+
+- **EC2:** Laravel served by Apache, deployed with `git pull` from GitHub
+- **RDS:** managed MySQL, reachable from the app server through its security group
+- **Security groups:** SSH limited to my IP, HTTP open, MySQL (3306) allowed only from the app server
+- **Region:** Asia Pacific (Sydney)
+
+### Update flow
+
+Edit and test locally, push to GitHub, then run `git pull` on the server.
