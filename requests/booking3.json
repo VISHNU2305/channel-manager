@@ -1,0 +1,9 @@
+{
+  "source": "ota-a",
+  "external_reference": "A-3001",
+  "room_type_id": 2,
+  "guest_name": "Sync Test",
+  "check_in": "2026-10-28",
+  "check_out": "2026-10-30",
+  "rooms": 1
+}

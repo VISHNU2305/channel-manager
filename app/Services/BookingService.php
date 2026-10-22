@@ -3,8 +3,11 @@
 namespace App\Services;
 
 use App\Exceptions\NoAvailabilityException;
+use App\Jobs\SyncAvailabilityJob;
 use App\Models\Booking;
 use App\Models\Inventory;
+use App\Models\SyncLog;
+use App\Services\Ota\OtaRegistry;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -12,7 +15,7 @@ class BookingService
 {
     public function create(array $data): Booking
     {
-        return DB::transaction(function () use ($data) {
+        $booking = DB::transaction(function () use ($data) {
             // Same OTA booking sent twice? Return the original, change nothing.
             $existing = Booking::where('source', $data['source'])
                 ->where('external_reference', $data['external_reference'])
@@ -28,7 +31,6 @@ class BookingService
             $nights = (int) $checkIn->diffInDays($checkOut);
 
             // Lock the inventory rows for these nights until the transaction ends.
-            // A second request for the same rooms waits here, then sees the new count.
             $rows = Inventory::where('room_type_id', $data['room_type_id'])
                 ->where('date', '>=', $checkIn->toDateString())
                 ->where('date', '<', $checkOut->toDateString())
@@ -59,5 +61,36 @@ class BookingService
                 'status' => 'confirmed',
             ]);
         });
+
+        if ($booking->wasRecentlyCreated) {
+            $this->queueSync($booking);
+        }
+
+        return $booking;
+    }
+
+    private function queueSync(Booking $booking): void
+    {
+        $nights = Inventory::where('room_type_id', $booking->room_type_id)
+            ->where('date', '>=', $booking->check_in->toDateString())
+            ->where('date', '<', $booking->check_out->toDateString())
+            ->get()
+            ->mapWithKeys(fn ($row) => [$row->date->toDateString() => $row->available_count])
+            ->all();
+
+        foreach (OtaRegistry::all() as $channel => $adapter) {
+            // Don't tell a site about a booking it sent us itself.
+            if ($channel === $booking->source) {
+                continue;
+            }
+
+            $log = SyncLog::create([
+                'booking_id' => $booking->id,
+                'channel' => $channel,
+                'status' => 'pending',
+            ]);
+
+            SyncAvailabilityJob::dispatch($log->id, $booking->room_type_id, $nights);
+        }
     }
 }
