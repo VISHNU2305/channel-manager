@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Exceptions\NoAvailabilityException;
 use App\Models\Booking;
 use App\Models\Inventory;
+use App\Models\OtaInventory;
 use App\Models\RoomType;
+use App\Models\SyncLog;
 use App\Services\BookingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -35,7 +37,31 @@ class DashboardController extends Controller
             'sources' => Booking::distinct()->count('source'),
         ];
 
-        return view('dashboard', compact('dates', 'roomTypes', 'inventory', 'bookings', 'stats'));
+        $formats = ['ota-a' => 'JSON', 'ota-b' => 'XML', 'ota-c' => 'Rate-limited API'];
+        $channels = collect($formats)->map(function ($format, $channel) {
+            $count = fn ($status) => SyncLog::where('channel', $channel)->where('status', $status)->count();
+            $failed = $count('failed');
+            $retrying = $count('retrying') + $count('pending');
+            $last = SyncLog::where('channel', $channel)->where('status', 'success')->latest('updated_at')->first();
+
+            return [
+                'name' => strtoupper($channel),
+                'format' => $format,
+                'success' => $count('success'),
+                'retrying' => $retrying,
+                'failed' => $failed,
+                'health' => $failed > 0 ? 'bad' : ($retrying > 0 ? 'warn' : 'good'),
+                'label' => $failed > 0 ? 'Needs attention' : ($retrying > 0 ? 'Syncing / retrying' : 'Healthy'),
+                'last' => $last?->updated_at->diffForHumans(),
+            ];
+        })->values();
+
+        $recentSync = SyncLog::latest('id')->take(10)->get();
+        $hasPending = SyncLog::whereIn('status', ['pending', 'retrying'])->exists();
+
+        return view('dashboard', compact(
+            'dates', 'roomTypes', 'inventory', 'bookings', 'stats', 'channels', 'recentSync', 'hasPending'
+        ));
     }
 
     public function book(Request $request, BookingService $service)
@@ -57,12 +83,14 @@ class DashboardController extends Controller
             return back()->withInput()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', "Booking #{$booking->id} confirmed and inventory updated.");
+        return back()->with('success', "Booking #{$booking->id} confirmed and inventory updated. Syncing to the other sites...");
     }
 
     public function reset()
     {
         DB::transaction(function () {
+            SyncLog::query()->delete();
+            OtaInventory::query()->delete();
             Booking::query()->delete();
 
             foreach (RoomType::all() as $roomType) {
@@ -71,6 +99,6 @@ class DashboardController extends Controller
             }
         });
 
-        return back()->with('success', 'Demo reset: all bookings cleared and inventory restored.');
+        return back()->with('success', 'Demo reset: all bookings and sync history cleared, inventory restored.');
     }
 }

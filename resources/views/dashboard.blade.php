@@ -62,9 +62,20 @@ button:hover{box-shadow:0 10px 30px rgba(108,140,255,.45);transform:translateY(-
 table{width:100%;border-collapse:collapse;font-size:13px}th{color:var(--mute);font-weight:400;text-align:left;padding:6px 8px}
 td{padding:9px 8px;border-top:1px solid var(--line)}tbody tr{transition:background .2s}tbody tr:hover{background:rgba(255,255,255,.05)}
 .pill{padding:2px 9px;border-radius:99px;background:rgba(108,140,255,.2);font-size:12px}
+.chgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;perspective:900px}
+.chan{border:1px solid var(--line);border-radius:16px;padding:16px;background:rgba(10,15,31,.45);display:flex;flex-direction:column;gap:6px}
+.chn{font:600 16px 'Sora',sans-serif}.fmt{font:400 11px 'Noto Sans JP',sans-serif;color:var(--mute);margin-left:8px}
+.chs{font-size:13px;display:flex;align-items:center;gap:8px}
+.dot{width:9px;height:9px;border-radius:50%}
+.dot.good{background:var(--mint)}.dot.warn{background:var(--amber)}.dot.bad{background:var(--pink)}
+.chan small{color:var(--mute);font-size:12px}
+.st{padding:2px 9px;border-radius:99px;font-size:12px}
+.st.success{background:rgba(77,226,197,.18)}.st.retrying,.st.pending{background:rgba(255,200,107,.2)}.st.failed{background:rgba(255,122,168,.2)}
+@media(max-width:820px){.chgrid{grid-template-columns:1fr}}
 @media(max-width:820px){.stats,.cols{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
+@if (!empty($hasPending))<meta http-equiv="refresh" content="4">@endif
 </head>
 <body>
 <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
@@ -131,6 +142,39 @@ td{padding:9px 8px;border-top:1px solid var(--line)}tbody tr{transition:backgrou
   </div>
 </section>
 
+<section class="glass" id="sync-panel" style="margin-top:22px">
+  <h2>Channel sync status</h2>
+  <p class="sub">Every booking is pushed to the other booking sites by a background queue, with automatic retries.</p>
+  <div class="chgrid">
+    @foreach ($channels as $ch)
+      <div class="chan tilt">
+        <div class="chn">{{ $ch['name'] }}<span class="fmt">{{ $ch['format'] }}</span></div>
+        <div class="chs"><span class="dot {{ $ch['health'] }}"></span>{{ $ch['label'] }}</div>
+        <small>{{ $ch['success'] }} synced, {{ $ch['retrying'] }} retrying, {{ $ch['failed'] }} failed</small>
+        <small>Last successful sync: {{ $ch['last'] ?? 'never' }}</small>
+      </div>
+    @endforeach
+  </div>
+  <div style="overflow-x:auto">
+  <table>
+    <thead><tr><th>When</th><th>Booking</th><th>Channel</th><th>Status</th><th>Tries</th><th>Detail</th></tr></thead>
+    <tbody>
+    @forelse ($recentSync as $s)
+      <tr>
+        <td style="white-space:nowrap">{{ $s->created_at->diffForHumans() }}</td>
+        <td>#{{ $s->booking_id }}</td>
+        <td><span class="pill">{{ strtoupper($s->channel) }}</span></td>
+        <td><span class="st {{ $s->status }}">{{ $s->status }}</span></td>
+        <td>{{ $s->attempts }}</td>
+        <td style="color:var(--mute)">{{ \Illuminate\Support\Str::limit($s->message ?? ($s->response_code ? 'HTTP '.$s->response_code : ''), 60) }}</td>
+      </tr>
+    @empty
+      <tr><td colspan="6" style="color:var(--mute)">No syncs yet. Make a booking and watch the channels update.</td></tr>
+    @endforelse
+    </tbody>
+  </table>
+  </div>
+</section>
 <div class="cols">
   <section class="glass">
     <h2>Create a booking</h2>
